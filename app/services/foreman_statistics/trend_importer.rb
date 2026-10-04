@@ -28,7 +28,7 @@ module ForemanStatistics
         if trend.is_a? FactTrend
           counter_hash[trend.trendable_id]   = Host.joins(:fact_values).where(:fact_values => { :fact_name_id => trend.trendable_id }).group(:value).count
         else
-          counter_hash[trend.trendable_type] = Host.group(trend.trendable_type.foreign_key.to_sym).count
+          counter_hash[trend.trendable_type] = foreman_trend_counts(trend.trendable_type)
         end
       end
       Trend.has_value.each do |trend|
@@ -59,5 +59,15 @@ module ForemanStatistics
     end
 
     def aggregate_counters; end
+
+    private
+
+    def foreman_trend_counts(trend_type)
+      if trend_type == 'ForemanPuppet::Environment'
+        Host.left_joins(:puppet).group('host_puppet_facets.environment_id').count
+      else
+        Host.group(trend_type.foreign_key.to_sym).count
+      end
+    end
   end
 end
